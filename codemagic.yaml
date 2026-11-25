@@ -1,0 +1,46 @@
+# Codemagic CI for «فارس وفهد للحسابات» (Flutter, Android only)
+# Trigger: push a tag v* (e.g. v1.0.8) -> builds a signed release APK.
+# Signing: the keystore is uploaded once in Codemagic
+# (Team settings > codemagic.yaml settings > Code signing identities >
+# Android keystores) with reference name `fares-fahd-debug-keystore`.
+# The build copies it to android/debug.keystore, which the project's
+# signing config (android/app/build.gradle.kts, pinnedDebug) already
+# reads with the standard debug-keystore passwords — so the SHA-1
+# fingerprint (87:34:7D:...:86:D3) stays the same and Google sign-in
+# keeps working. The keystore file itself is never committed (see
+# .gitignore) — the repo is public.
+#
+# Optional later step (not enabled here): automatic GitHub Release
+# publishing needs a GitHub token stored as a secure Codemagic
+# environment variable; add a publishing script when that is set up.
+
+workflows:
+  android-release:
+    name: Android Release
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      java: 17
+      android_signing:
+        - fares-fahd-debug-keystore
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Analyze
+        script: flutter analyze
+      - name: Run tests
+        script: flutter test
+      - name: Place signing keystore
+        script: |
+          cp "$CM_KEYSTORE_PATH" android/debug.keystore
+      - name: Build release APK
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk

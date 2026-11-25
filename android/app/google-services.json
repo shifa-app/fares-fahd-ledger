@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "812532953493",
+    "project_id": "fares-fahd-ledger",
+    "storage_bucket": "fares-fahd-ledger.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:812532953493:android:bdb25ce55fa6d6f435069c",
+        "android_client_info": {
+          "package_name": "com.faresfahd.ledger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUvpW17g9Q-wwOAKDpD2hQh8EweluXa1A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
