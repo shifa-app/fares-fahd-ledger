@@ -359,6 +359,25 @@ void main() {
     });
   });
 
+  group('backupUploadMetadata (1.0.9 regression: update must not send parents)', () {
+    test('update metadata carries the name only, no parents', () {
+      // The exact 1.0.8 bug on the user phone: the upload went through
+      // files.update (the backup exists on Drive since 01:42) with
+      // `parents` in the body, and Drive answered `400 Invalid Value`
+      // — the Drive API only accepts parents via the addParents /
+      // removeParents parameters, never in the update body.
+      final meta = backupUploadMetadata(isUpdate: true);
+      expect(meta.name, CloudBackupService.fileName);
+      expect(meta.parents, isNull);
+    });
+
+    test('create metadata still carries the appDataFolder parent', () {
+      final meta = backupUploadMetadata(isUpdate: false);
+      expect(meta.name, CloudBackupService.fileName);
+      expect(meta.parents, <String>[cloudBackupSpace]);
+    });
+  });
+
   group('backupCopiedRows (counts from real local data)', () {
     test('user data shape: 1 person, 3 entries', () {
       final rows = backupCopiedRows(persons: 1, entries: 3);

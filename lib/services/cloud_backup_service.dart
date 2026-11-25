@@ -38,6 +38,24 @@ import 'backup_service.dart';
 /// parent folder so the value can never drift apart again.
 const String cloudBackupSpace = 'appDataFolder';
 
+/// Metadata for a Drive upload of the backup file.
+///
+/// 1.0.9: the Drive API rejects `parents` in the body of a
+/// `files.update` call (parents change only via the `addParents` /
+/// `removeParents` query parameters) with `400 Invalid Value` — the
+/// exact error seen on the user's phone in 1.0.8 once the backup
+/// already existed on Drive and every upload went through the update
+/// path (`files.list` / `files.get` / `files.create` had all been
+/// proven working before, so the update was the only untested path).
+/// So the update metadata carries the name only, and `parents` stays
+/// in the create metadata only. Pure, so the rule is pinned by a
+/// unit test.
+drive.File backupUploadMetadata({required bool isUpdate}) {
+  final meta = drive.File()..name = CloudBackupService.fileName;
+  if (!isUpdate) meta.parents = <String>[cloudBackupSpace];
+  return meta;
+}
+
 class CloudBackupService {
   CloudBackupService._();
 
@@ -175,14 +193,21 @@ class CloudBackupService {
         Stream<List<int>>.value(bytes),
         bytes.length,
       );
-      final meta = drive.File()
-        ..name = fileName
-        ..parents = <String>[cloudBackupSpace];
       final existing = await _findBackup(api);
       if (existing != null && existing.id != null) {
-        await api.files.update(meta, existing.id!, uploadMedia: media);
+        // 1.0.9: update metadata must NOT carry `parents` — the Drive
+        // API answers `400 Invalid Value` when it is in the update
+        // body (see [backupUploadMetadata]).
+        await api.files.update(
+          backupUploadMetadata(isUpdate: true),
+          existing.id!,
+          uploadMedia: media,
+        );
       } else {
-        await api.files.create(meta, uploadMedia: media);
+        await api.files.create(
+          backupUploadMetadata(isUpdate: false),
+          uploadMedia: media,
+        );
       }
       await LedgerDb.instance.saveSetting(
         'cloud_last_upload',
